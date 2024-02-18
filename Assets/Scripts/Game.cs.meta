@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 46e686d10f506bc488ececeeb625438b
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences:
+  - textPersons: {instanceID: 0}
+  - textAverageDistance: {instanceID: 0}
+  - trainigData: {fileID: 4900000, guid: 5d88cc942d6c5d04f8ca8365e5e71eaa, type: 3}
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
