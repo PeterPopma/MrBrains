@@ -15,7 +15,7 @@ public class CharacterSpawner : MonoBehaviour
     private int counterPersons;
     private int currentDepth;
     private bool isLearningPath;
-    private List<double> currentAngles = new List<double>() { -80, -80, -80, -80, -80, -80, -80, -80, -80, -80, -80, -80 };
+    private List<double> currentAngles = new List<double>() { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
     private int currentDirectionChanges;
     private double totalDistanceTravelled;
     public int CounterPersons { get => counterPersons; set => counterPersons = value; }

@@ -11,12 +11,16 @@ namespace NeuralNet
     {
         public List<Layer> Layers { get; set; }
         public double LearningRate { get; set; }
-
         private long learningIterations;
         private long inputNeurons;
         private long outputNeurons;
         private long hiddenNeurons;
         private TimeSpan trainingTime;
+        public long LearningIterations { get => learningIterations; set => learningIterations = value; }
+        public long InputNeurons { get => inputNeurons; set => inputNeurons = value; }
+        public long OutputNeurons { get => outputNeurons; set => outputNeurons = value; }
+        public long HiddenNeurons { get => hiddenNeurons; set => hiddenNeurons = value; }
+        public TimeSpan TrainingTime { get => trainingTime; set => trainingTime = value; }
 
         public int LayerCount
         {
@@ -26,11 +30,31 @@ namespace NeuralNet
             }
         }
 
-        public long LearningIterations { get => learningIterations; set => learningIterations = value; }
-        public long InputNeurons { get => inputNeurons; set => inputNeurons = value; }
-        public long OutputNeurons { get => outputNeurons; set => outputNeurons = value; }
-        public long HiddenNeurons { get => hiddenNeurons; set => hiddenNeurons = value; }
-        public TimeSpan TrainingTime { get => trainingTime; set => trainingTime = value; }
+        // Measure the amount of training by calculating the "randomness" of the dendrites weights.
+        // the dendrites were initalized with random values. After traing, these values will change
+        // If the values are changing more slowly, the network is fully trained
+        public double MeasureNetworkQuality()
+        {
+            double randomness = 0;
+            double previousValue = 0;
+            for (int l = 0; l < Layers.Count; l++)
+            {
+                Layer layer = Layers[l];
+
+                for (int n = 0; n < layer.Neurons.Count; n++)
+                {
+                    Neuron neuron = layer.Neurons[n];
+
+                    foreach (Dendrite dendrite in neuron.Dendrites)
+                    {
+                        randomness += Math.Abs(previousValue - dendrite.Weight);
+                        previousValue = dendrite.Weight;
+                    }
+                }
+            }
+
+            return randomness / TotalDendriteCount();
+        }
 
         public int MaxNeuronsInOneLayer()
         {
@@ -53,6 +77,23 @@ namespace NeuralNet
                 count += layer.NeuronCount;
             }
             return count;
+        }
+
+        public long TotalDendriteCount()
+        {
+            long totalDendrites = 0;
+            for (int l = 0; l < Layers.Count; l++)
+            {
+                Layer layer = Layers[l];
+                totalDendrites += layer.Neurons.Count * layer.Neurons[0].DendriteCount;
+            }
+
+            return totalDendrites;
+        }
+
+        public Layer OutputLayer()
+        {
+            return Layers[Layers.Count - 1];
         }
 
         public NeuralNetwork(double learningRate, long inputNeurons, long hiddenNeurons, long outputNeurons)
@@ -106,18 +147,6 @@ namespace NeuralNet
             }
         }
 
-        public long TotalDendriteCount()
-        {
-            long totalDendrites = 0;
-            for (int l = 0; l < Layers.Count; l++)
-            {
-                Layer layer = Layers[l];
-                totalDendrites += layer.Neurons.Count * layer.Neurons[0].DendriteCount;
-            }
-
-            return totalDendrites;
-        }
-
         public NeuralNetwork(double learningRate, int[] layers)
         {
             learningIterations = 0;
@@ -152,72 +181,6 @@ namespace NeuralNet
         private double Sigmoid(double x)
         {
             return 1 / (1 + Math.Exp(-x));
-        }
-
-        // Measure the amount of training by calculating the "randomness" of the dendrites weights.
-        // the dendrites were initalized with random values. After traing, these values will change
-        // If the values are changing more slowly, the network is fully trained
-        public double MeasureNetworkQuality()
-        {
-            double randomness = 0;
-            double previousValue = 0;
-            for (int l = 0; l < Layers.Count; l++)
-            {
-                Layer layer = Layers[l];
-
-                for (int n = 0; n < layer.Neurons.Count; n++)
-                {
-                    Neuron neuron = layer.Neurons[n];
-
-                    foreach (Dendrite dendrite in neuron.Dendrites)
-                    {
-                        randomness += Math.Abs(previousValue - dendrite.Weight);
-                        previousValue = dendrite.Weight;
-                    }
-                }
-            }
-
-            return randomness / TotalDendriteCount(); 
-        }
-
-
-        public double[] Run(List<double> input)
-        {
-            if (input.Count != this.Layers[0].NeuronCount) return null;
-
-            for (int l = 0; l < Layers.Count; l++)
-            {
-                Layer layer = Layers[l];
-
-                for (int n = 0; n < layer.Neurons.Count; n++)
-                {
-                    Neuron neuron = layer.Neurons[n];
-
-                    if (l == 0)
-                        neuron.Value = input[n];
-                    else
-                    {
-                        neuron.Value = 0;
-                        for (int np = 0; np < this.Layers[l - 1].Neurons.Count; np++)
-                            neuron.Value = neuron.Value + this.Layers[l - 1].Neurons[np].Value * neuron.Dendrites[np].Weight;
-
-                        neuron.Value = Sigmoid(neuron.Value + neuron.Bias);
-                    }
-                }
-            }
-
-            Layer last = this.Layers[this.Layers.Count - 1];
-            int numOutput = last.Neurons.Count ;
-            double[] output = new double[numOutput];
-            for (int i = 0; i < last.Neurons.Count; i++)
-                output[i] = last.Neurons[i].Value;
-
-            return output;
-        }
-
-        public Layer OutputLayer()
-        {
-            return Layers[Layers.Count-1];
         }
 
         public void Train(List<List<double>> input, List<List<double>> output)
@@ -290,5 +253,38 @@ namespace NeuralNet
             trainingTime += stopWatch.Elapsed;
         }
 
+        public double[] Run(List<double> input)
+        {
+            if (input.Count != this.Layers[0].NeuronCount) return null;
+
+            for (int l = 0; l < Layers.Count; l++)
+            {
+                Layer layer = Layers[l];
+
+                for (int n = 0; n < layer.Neurons.Count; n++)
+                {
+                    Neuron neuron = layer.Neurons[n];
+
+                    if (l == 0)
+                        neuron.Value = input[n];
+                    else
+                    {
+                        neuron.Value = 0;
+                        for (int np = 0; np < this.Layers[l - 1].Neurons.Count; np++)
+                            neuron.Value = neuron.Value + this.Layers[l - 1].Neurons[np].Value * neuron.Dendrites[np].Weight;
+
+                        neuron.Value = Sigmoid(neuron.Value + neuron.Bias);
+                    }
+                }
+            }
+
+            Layer last = this.Layers[this.Layers.Count - 1];
+            int numOutput = last.Neurons.Count;
+            double[] output = new double[numOutput];
+            for (int i = 0; i < last.Neurons.Count; i++)
+                output[i] = last.Neurons[i].Value;
+
+            return output;
+        }
     }
 }

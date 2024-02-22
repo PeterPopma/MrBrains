@@ -39,6 +39,18 @@ public class Game : MonoBehaviour
             new int[] { Convert.ToInt32(inputInputNeurons.text),
                 Convert.ToInt32(inputHiddenNeurons.text),
                 Convert.ToInt32(inputOutputNeurons.text) });
+        List<double> output;
+        List<double> inputs = new List<double>() { 0 };
+
+        // train the network just a little bit to make the characters move the right initial direction
+        for(int i=0; i<15; i++)
+        {
+            inputs[0] = 0;
+            neuralNetwork.Train(inputs, AnglesToNeurons(directionChanges0));
+
+            inputs[0] = 1;
+            neuralNetwork.Train(inputs, AnglesToNeurons(directionChanges1));
+        }
     }
 
     void Update()

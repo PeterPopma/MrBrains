@@ -1,2 +1,0 @@
-peter,4
-alex,6
